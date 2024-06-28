@@ -4,7 +4,7 @@ from langchain_community.llms import OpenAI
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
 import os
 import tempfile
@@ -41,7 +41,7 @@ if uploaded_files:
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
     # Create the vectorstore to use as the index
-    db = Chroma.from_documents(texts, embeddings, persist_directory="/tmp/chroma")
+    db = FAISS.from_documents(texts, embeddings)
 
     # Expose this index in a retriever interface
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 2})
