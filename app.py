@@ -3,7 +3,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain_community.llms import OpenAI
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 import os
@@ -13,8 +13,10 @@ import tempfile
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
-# Set the OpenAI API key
-os.environ['OPENAI_API_KEY'] = openai_api_key
+# Ensure the OpenAI API key is set
+if not openai_api_key:
+    st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+    st.stop()
 
 st.title("Question Answering App Using LangChain")
 
@@ -36,16 +38,16 @@ if uploaded_files:
     texts = text_splitter.split_documents(documents)
 
     # Select which embeddings we want to use
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
     # Create the vectorstore to use as the index
-    db = Chroma.from_documents(texts, embeddings)
+    db = Chroma.from_documents(texts, embeddings, persist_directory="/tmp/chroma")
 
     # Expose this index in a retriever interface
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
     # Create a chain to answer questions
-    qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
+    qa = ConversationalRetrievalChain.from_llm(OpenAI(api_key=openai_api_key), retriever)
 
     # Initialize chat history in the session state
     if "chat_history" not in st.session_state:
