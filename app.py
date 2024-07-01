@@ -3,20 +3,18 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain_community.llms import OpenAI
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 import os
 import tempfile
 
 # Load environment variables
 load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
-# Ensure the OpenAI API key is set
-# if not openai_api_key:
-#     st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-#     st.stop()
+# Set the OpenAI API key
+os.environ['OPENAI_API_KEY'] = openai_api_key
 
 st.title("Question Answering App Using LangChain")
 
@@ -38,16 +36,16 @@ if uploaded_files:
     texts = text_splitter.split_documents(documents)
 
     # Select which embeddings we want to use
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+    embeddings = OpenAIEmbeddings()
 
     # Create the vectorstore to use as the index
-    db = FAISS.from_documents(texts, embeddings)
+    db = Chroma.from_documents(texts, embeddings)
 
     # Expose this index in a retriever interface
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
     # Create a chain to answer questions
-    qa = ConversationalRetrievalChain.from_llm(OpenAI(openai_api_key=OPENAI_API_KEY), retriever)
+    qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
 
     # Initialize chat history in the session state
     if "chat_history" not in st.session_state:
@@ -61,11 +59,11 @@ if uploaded_files:
             st.write("---")
 
     query = st.text_input("Enter your question:")
-    
+
     if st.button("Submit") and query:  # Only process if submit button is clicked and query is not empty
         # Format the chat history for the chain
         formatted_chat_history = [(chat["question"], chat.get("answer", "")) for chat in st.session_state.chat_history]
-        
+
         result = qa({"question": query, "chat_history": formatted_chat_history})
 
         # Update chat history with the new question and answer
