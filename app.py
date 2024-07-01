@@ -11,12 +11,12 @@ import tempfile
 
 # Load environment variables
 load_dotenv()
-openai_api_key = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Ensure the OpenAI API key is set
-if not openai_api_key:
-    st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
-    st.stop()
+# if not openai_api_key:
+#     st.error("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+#     st.stop()
 
 st.title("Question Answering App Using LangChain")
 
@@ -38,7 +38,7 @@ if uploaded_files:
     texts = text_splitter.split_documents(documents)
 
     # Select which embeddings we want to use
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
     # Create the vectorstore to use as the index
     db = FAISS.from_documents(texts, embeddings)
@@ -47,7 +47,7 @@ if uploaded_files:
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
     # Create a chain to answer questions
-    qa = ConversationalRetrievalChain.from_llm(OpenAI(api_key=openai_api_key), retriever)
+    qa = ConversationalRetrievalChain.from_llm(OpenAI(openai_api_key=OPENAI_API_KEY), retriever)
 
     # Initialize chat history in the session state
     if "chat_history" not in st.session_state:
